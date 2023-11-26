@@ -38,14 +38,14 @@ if st.button("완성!"):
     messages.append({'role': "assistant", 'content': mask_setting})
     messages.append({'role': 'user', 'content': diary_input})
 
-    response = openai.ChatCompletion.create(
-    model='gpt-3.5-turbo',
-    messages=messages,
-    max_tokens=500,
-    )
+    # response = openai.ChatCompletion.create(
+    # model='gpt-3.5-turbo',
+    # messages=messages,
+    # max_tokens=500,
+    # )
 
-    masked_diary_input = response['choices'][0]['message']['content']
-    # masked_diary_input = diary_input
+    # masked_diary_input = response['choices'][0]['message']['content']
+    masked_diary_input = diary_input
 
 
     # Set chatGPT persona to generate comfort for the input diary
@@ -101,7 +101,13 @@ if st.button("완성!"):
 
     song_lyrics = list(selected_rows['lyrics'])[0]
 
-    
+    st.write(f"작성한 일기: {diary_input}")
+    st.write(f"마스킹된 일기: {masked_diary_input}")
+    st.write(f"당신의 추정 감정: {current_emotion}")
+    st.write(f"추천된 노래: {song_title}")
+    st.write(f"추천된 노래 가사: {song_lyrics}")
+    st.write(f"과거 감정: {previous_emotions}")
+    st.write(f"과거 일기: {previous_experiences}")
 
     user_message = f"""
                         1. Emotion type: {current_emotion} 
@@ -114,11 +120,11 @@ if st.button("완성!"):
     user_message = user_message.strip()
     messages_comfort.append({'role': 'user', 'content': user_message})
 
-    response = openai.ChatCompletion.create(
-    model='gpt-3.5-turbo',
-    messages=messages_comfort,
-    max_tokens=500,
-    )
+    # response = openai.ChatCompletion.create(
+    # model='gpt-3.5-turbo',
+    # messages=messages_comfort,
+    # max_tokens=500,
+    # )
 
     comment = response['choices'][0]['message']['content']
 
@@ -127,6 +133,7 @@ if st.button("완성!"):
     song_title = song_title.replace("'", "''")
     song_lyrics = song_lyrics.replace("'", "''")
     comment = comment.replace("'", "''")
+
     # For test, will be removed
     st.write(f"작성한 일기: {diary_input}")
     st.write(f"마스킹된 일기: {masked_diary_input}")

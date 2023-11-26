@@ -1,0 +1,5 @@
+openai==0.28.0
+pandas==1.5.3
+transformers
+sentence_transformers
+pinecone-client

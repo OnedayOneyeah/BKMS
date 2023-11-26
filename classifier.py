@@ -72,6 +72,10 @@ class Classifier:
         s1_scores, selected_ids = self.compute_s1(max_k, include_values)
         s2_scores = self.compute_s2(selected_ids)
 
+        print(s1_scores[:10])
+        print(s2_scores[:10])
+        print(selected_ids[:10])
+
         # scaling
         total_score = s1_scores * 0.5 + s2_scores * 0.5 # s1_scores.shape: (1,100), s2_scores.shape: (1,100)
         selected_ids = list(map(lambda x: int(x), selected_ids))
@@ -137,7 +141,7 @@ class Classifier:
                 include_values = include_values,
                 top_k=1
             )['matches'][0]['values']) # [embs, embs, ...], (100, 768)
-        
+        print(s2_main)
         s2_main = torch.FloatTensor(s2_main) # (100,768)
 
         s2_main_score = cosine_similarity(self.diary_emo_embedding.reshape(1,-1), s2_main)
@@ -163,11 +167,10 @@ class Classifier:
                 include_values = include_values,
                 top_k=1
             )['matches'][0]['values']) # [label, label, ...] (100,1)
-
+        print(s2_sub)
         s2_sub = torch.FloatTensor(s2_sub).reshape(1,100) # (1,100)
         s2_sub = torch.eq(torch.ones(s2_sub.shape[1])*self.diary_emotion_scores, s2_sub)*1
         s2_sub = s2_sub.detach().numpy()
-        
         return s2_sub # (1,100)
              
     
