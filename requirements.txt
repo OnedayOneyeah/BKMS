@@ -3,3 +3,6 @@ pandas==1.5.3
 transformers
 sentence_transformers
 pinecone-client
+psycopg2-binary
+streamlit
+streamlit-option-menu
