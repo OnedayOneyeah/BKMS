@@ -96,10 +96,9 @@ if st.button("완성!"):
     columns[0] = 'song_idx'
     song_db.columns = columns
     selected_rows = song_db[song_db['song_idx'].isin(topk_music_ids)]
+    song_artists = list(selected_rows['track_artist'])
     song_titles = list(selected_rows['track_name'])
-    song_title = song_titles[0]
-
-    song_lyrics = list(selected_rows['lyrics'])[0]
+    song_lyrics = list(selected_rows['lyrics'])
 
     st.write(f"작성한 일기: {diary_input}")
     st.write(f"마스킹된 일기: {masked_diary_input}")
