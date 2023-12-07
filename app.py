@@ -13,7 +13,7 @@ from classifier import Classifier
 connection_info = "host=147.47.200.145 dbname=teamdb8 user=team8 password=youngjoon port=34543"
 
 st.title(f"{date.today().strftime('%Y년 %m월 %d일')}의 일기")
-diary_input = st.text_area("여기에 일기를 작성해 주세요 :memo:", height=200)
+diary_input = st.text_area("여기에 일기를 작성해 주세요 :memo:", height=100)
 
 now = datetime.now()
 year = now.year
@@ -204,57 +204,62 @@ col3, col4 = st.columns([2,3])
 
 # 오늘 작성한 일기를 보고 싶다!
 if choice == "오늘의 기록":
-
+    st.header("Cheer up 🫂")
+    try:
+        conn = psycopg2.connect(connection_info)
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT id FROM date WHERE year = {year} AND month = {month} AND day = {day};
+        """)
+        result = cursor.fetchone()
+        if result is not None:
+            id = result[0]
+            cursor.execute(f"""
+                SELECT content FROM comment WHERE id = {id};
+            """)        
+        result = cursor.fetchone()
+        if result is not None:
+            content = result
+            st.write(f"{content}")
+        else:
+            st.write("오늘의 위로가 없습니다.")  
+    except Exception as e:
+        st.error("코멘트를 가져오는 중에 오류가 발생했습니다")
+        st.error(e)
+    finally:
+        conn.close()
+        
     with col1:
         st.header("Playlist 🎧")
         st.image('https://img.freepik.com/vetores-premium/design-de-vetor-simples-do-music-player-com-faixa-de-botoes-e-interface-de-player-de-audio-de-titulo_505988-666.jpg')
-
     with col2: # 여기에 추천노래 들어갈 것!
         st.header("")
         try:
             conn = psycopg2.connect(connection_info)
             cursor = conn.cursor()
-
             cursor.execute(f"""
-                SELECT music1, artist1, music2, artist2, music3, artist3 FROM recommend WHERE year = {year} AND month = {month} AND day = {day};
+                SELECT id FROM date WHERE year = {year} AND month = {month} AND day = {day};
             """)
             result = cursor.fetchone()
             if result is not None:
+                id = result[0]
+                cursor.execute(f"""
+                    SELECT music1, artist1, music2, artist2, music3, artist3 FROM recommend WHERE id = {id};
+                """)
+            result = cursor.fetchone()
+            if result is not None and all(result):
                 music1, artist1, music2, artist2, music3, artist3 = result
                 st.write(f"1. {artist1} - {music1}")
                 st.write(f"2. {artist2} - {music2}")
                 st.write(f"3. {artist3} - {music3}")
             else:
                 st.write("추천된 노래가 없습니다.")
-
         except Exception as e:
             st.error("추천된 노래를 가져오는 중에 오류가 발생했습니다.")
             st.error(e)
-
         finally:
             conn.close()
-       
-    st.header("Cheer up 🫂")
-    try:
-        conn = psycopg2.connect(connection_info)
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT content FROM comment WHERE year = {year} AND month = {month} AND day = {day};
-        """)
-        result = cursor.fetchone()
-        if result is not None:
-            content = result
-            st.write(f"{content}")
-        else:
-            st.write("오늘의 위로가 없습니다")
-    
-    except Exception as e:
-        st.error("코멘트를 가져오는 중에 오류가 발생했습니다")
-        st.error(e)
-    
-    finally:
-        conn.close()
-        
+
     st.header("Today's record 🖋️")
     try:
         conn = psycopg2.connect(connection_info)
@@ -283,17 +288,6 @@ if choice == "오늘의 기록":
 
 # 과거에 작성한 일기를 보고 싶다!
 elif choice == "과거의 기록":
-
-    with col3:
-        st.header("Playlist 🎧")
-        st.image('https://img.freepik.com/vetores-premium/design-de-vetor-simples-do-music-player-com-faixa-de-botoes-e-interface-de-player-de-audio-de-titulo_505988-666.jpg')
-
-    with col4: 
-        st.header("")
-        # 여기에 추천노래 들어갈 것!
-    st.header("Cheer up 🫂")
-    # 여기에 과거의 위로 들어갈 것!
-    
     st.header("Past diary 🖋️")
     selected_date = st.date_input("날짜를 선택하세요.", date.today())
     selected_year = selected_date.year
@@ -323,3 +317,63 @@ elif choice == "과거의 기록":
         st.error(e)
     finally:
         conn.close()
+        
+    st.header("Cheer up 🫂")
+    try:
+        conn = psycopg2.connect(connection_info)
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT id FROM date WHERE year = {selected_year} AND month = {selected_month} AND day = {selected_day};
+        """)
+        result = cursor.fetchone()
+        if result is not None:
+            id = result[0]
+            cursor.execute(f"""
+                SELECT content FROM comment WHERE id = {id};
+            """)        
+        result = cursor.fetchone()
+        if result is not None:
+            content = result
+            st.write(f"{content}")
+        else:
+            st.write(f"{selected_date}의 기록이 없습니다.")  
+    except Exception as e:
+        st.error("코멘트를 가져오는 중에 오류가 발생했습니다")
+        st.error(e)
+    finally:
+        conn.close()
+        
+    with col3:
+        st.header("Playlist 🎧")
+        st.image('https://img.freepik.com/vetores-premium/design-de-vetor-simples-do-music-player-com-faixa-de-botoes-e-interface-de-player-de-audio-de-titulo_505988-666.jpg')
+
+    with col4: 
+        st.header("")
+        try:
+            conn = psycopg2.connect(connection_info)
+            cursor = conn.cursor()
+            cursor.execute(f"""
+                SELECT id FROM date WHERE year = {selected_year} AND month = {selected_month} AND day = {selected_day};
+            """)
+            result = cursor.fetchone()
+            if result is not None:
+                id = result[0]
+                cursor.execute(f"""
+                    SELECT music1, artist1, music2, artist2, music3, artist3 FROM recommend WHERE id = {id};
+                """)
+            result = cursor.fetchone()
+            if result is not None and all(result):
+                music1, artist1, music2, artist2, music3, artist3 = result
+                st.write(f"1. {artist1} - {music1}")
+                st.write(f"2. {artist2} - {music2}")
+                st.write(f"3. {artist3} - {music3}")
+            else:
+                st.write("추천된 노래가 없습니다.")
+        except Exception as e:
+            st.error("추천된 노래를 가져오는 중에 오류가 발생했습니다.")
+            st.error(e)
+        finally:
+            conn.close()
+            
+
+    
