@@ -10,15 +10,10 @@ import openai
 from create_table import create_table, delete_table
 from classifier import Classifier
 
-# delete_table()
-# create_table()
-
 connection_info = "host=147.47.200.145 dbname=teamdb8 user=team8 password=youngjoon port=34543"
 
 st.title(f"{date.today().strftime('%Y년 %m월 %d일')}의 일기")
 diary_input = st.text_area("여기에 일기를 작성해 주세요 :memo:", height=200)
-
-
 
 now = datetime.now()
 year = now.year
@@ -46,7 +41,6 @@ if st.button("완성!"):
 
     # masked_diary_input = response['choices'][0]['message']['content']
     masked_diary_input = diary_input
-
 
     # Set chatGPT persona to generate comfort for the input diary
     persona_setting = """Your name is Dr. Jeong. You are an expert in psychotherapy. 
@@ -88,30 +82,21 @@ if st.button("완성!"):
     result = cursor.fetchall()
     previous_emotions = list(map(lambda x: x[0], result)) if len(result) > 0 else []
 
-
     scores, selected_ids = classifier.compute_scores()
-    topk_music_ids = classifier.return_topk_music(scores, selected_ids, top_k=2).squeeze().tolist()
+    topk_music_ids = classifier.return_topk_music(scores, selected_ids, top_k=3).squeeze().tolist()
     song_db = pd.read_csv('dataset/spotify_data.csv')
     columns = list(song_db.columns)
     columns[0] = 'song_idx'
     song_db.columns = columns
     selected_rows = song_db[song_db['song_idx'].isin(topk_music_ids)]
     song_artists = list(selected_rows['track_artist'])
-    song_titles = list(selected_rows['track_name'])
+    song_titles = list(selected_rows['track_name']) # 추천 음악의 제목
     song_lyrics = list(selected_rows['lyrics'])
-
-    st.write(f"작성한 일기: {diary_input}")
-    st.write(f"마스킹된 일기: {masked_diary_input}")
-    st.write(f"당신의 추정 감정: {current_emotion}")
-    st.write(f"추천된 노래: {song_title}")
-    st.write(f"추천된 노래 가사: {song_lyrics}")
-    st.write(f"과거 감정: {previous_emotions}")
-    st.write(f"과거 일기: {previous_experiences}")
 
     user_message = f"""
                         1. Emotion type: {current_emotion} 
                         2. Experience: {current_experience} 
-                        3. Song title: {song_title} 
+                        3. Song title: {song_titles} 
                         4. Song lyrics {song_lyrics}
                         5: Previous emotion types: {previous_emotions} 
                         6: Previous experiences: {previous_experiences}
@@ -129,19 +114,9 @@ if st.button("완성!"):
 
     # Modify ' to avoid sql error
     current_experience = current_experience.replace("'", "''")
-    song_title = song_title.replace("'", "''")
+    song_title = song_titles.replace("'", "''")
     song_lyrics = song_lyrics.replace("'", "''")
     comment = comment.replace("'", "''")
-
-    # For test, will be removed
-    st.write(f"작성한 일기: {diary_input}")
-    st.write(f"마스킹된 일기: {masked_diary_input}")
-    st.write(f"당신의 추정 감정: {current_emotion}")
-    st.write(f"추천된 노래: {song_title}")
-    st.write(f"추천된 노래 가사: {song_lyrics}")
-    st.write(f"과거 감정: {previous_emotions}")
-    st.write(f"과거 일기: {previous_experiences}")
-    st.write(f"한마디: {comment}")
 
     conn = psycopg2.connect(connection_info)
     cursor = conn.cursor()
@@ -153,7 +128,7 @@ if st.button("완성!"):
         """)
       result = cursor.fetchone()
 
-      if result is not None:
+      if result is not None: # 바꿔치기
         id = result[0]
         cursor.execute(f'''
                 UPDATE diary SET content = '{diary_input}' WHERE id = {id};
@@ -165,7 +140,14 @@ if st.button("완성!"):
                 UPDATE emotion SET emotion = '{current_emotion}' WHERE id = {id};
             ''')
         cursor.execute(f'''
-                UPDATE recommend SET music = '{song_title}' WHERE id = {id};
+                UPDATE recommend SET 
+                music1 = '{song_titles[0]}',
+                artist1 = '{song_artists[0]}',
+                music2 = '{song_titles[1]}',
+                artist2 = '{song_artists[1]}',
+                music3 = '{song_titles[2]}',
+                artist3 = '{song_artists[2]}',
+                WHERE id = {id};
             ''')
         cursor.execute(f'''
                 UPDATE comment SET content = '{comment}' WHERE id = {id};
@@ -186,18 +168,15 @@ if st.button("완성!"):
             INSERT INTO emotion(id, emotion) VALUES ({id}, '{current_emotion}');
         ''')
         cursor.execute(f'''
-            INSERT INTO recommend(id, music) VALUES ({id}, '{song_title}');
+            INSERT INTO recommend(id, music1, artist1, music2, artist2, music3, artist3) 
+            VALUES ({id}, '{song_titles[0]}', '{song_artists[0]}', '{song_titles[1]}', '{song_artists[1]}', '{song_titles[2]}', '{song_artists[2]}');
         ''')
         cursor.execute(f'''
             INSERT INTO comment(id, content) VALUES ({id}, '{comment}');
         ''')
-        
-
-        
+           
       conn.commit()
-      st.success("일기가 성공적으로 작성되었습니다! :100:")
-      
-
+      st.success("일기가 성공적으로 작성되었습니다! :100:")     
 
     except Exception as e:
       st.error("일기 작성에 실패했습니다")
@@ -232,9 +211,51 @@ if choice == "오늘의 기록":
 
     with col2: # 여기에 추천노래 들어갈 것!
         st.header("")
+        try:
+            conn = psycopg2.connect(connection_info)
+            cursor = conn.cursor()
 
-    st.header("Cheer up")
-    st.header("Today's record")
+            cursor.execute(f"""
+                SELECT music1, artist1, music2, artist2, music3, artist3 FROM recommend WHERE year = {year} AND month = {month} AND day = {day};
+            """)
+            result = cursor.fetchone()
+            if result is not None:
+                music1, artist1, music2, artist2, music3, artist3 = result
+                st.write(f"1. {artist1} - {music1}")
+                st.write(f"2. {artist2} - {music2}")
+                st.write(f"3. {artist3} - {music3}")
+            else:
+                st.write("추천된 노래가 없습니다.")
+
+        except Exception as e:
+            st.error("추천된 노래를 가져오는 중에 오류가 발생했습니다.")
+            st.error(e)
+
+        finally:
+            conn.close()
+       
+    st.header("Cheer up 🫂")
+    try:
+        conn = psycopg2.connect(connection_info)
+        cursor = conn.cursor()
+        cursor.execute(f"""
+            SELECT content FROM comment WHERE year = {year} AND month = {month} AND day = {day};
+        """)
+        result = cursor.fetchone()
+        if result is not None:
+            content = result
+            st.write(f"{content}")
+        else:
+            st.write("오늘의 위로가 없습니다")
+    
+    except Exception as e:
+        st.error("코멘트를 가져오는 중에 오류가 발생했습니다")
+        st.error(e)
+    
+    finally:
+        conn.close()
+        
+    st.header("Today's record 🖋️")
     try:
         conn = psycopg2.connect(connection_info)
         cursor = conn.cursor()
@@ -267,11 +288,13 @@ elif choice == "과거의 기록":
         st.header("Playlist 🎧")
         st.image('https://img.freepik.com/vetores-premium/design-de-vetor-simples-do-music-player-com-faixa-de-botoes-e-interface-de-player-de-audio-de-titulo_505988-666.jpg')
 
-    with col4: # 여기에 추천노래 들어갈 것!
+    with col4: 
         st.header("")
-
+        # 여기에 추천노래 들어갈 것!
     st.header("Cheer up 🫂")
-    st.header("Past diary")
+    # 여기에 과거의 위로 들어갈 것!
+    
+    st.header("Past diary 🖋️")
     selected_date = st.date_input("날짜를 선택하세요.", date.today())
     selected_year = selected_date.year
     selected_month = selected_date.month
@@ -300,5 +323,3 @@ elif choice == "과거의 기록":
         st.error(e)
     finally:
         conn.close()
-
-
