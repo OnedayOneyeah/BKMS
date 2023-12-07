@@ -6,3 +6,4 @@ pinecone-client
 psycopg2-binary
 streamlit
 streamlit-option-menu
+watchdog
