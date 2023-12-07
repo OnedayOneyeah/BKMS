@@ -12,7 +12,7 @@ def create_table():
             CREATE TABLE IF NOT EXISTS diary(id SERIAL PRIMARY KEY, content text);
             CREATE TABLE IF NOT EXISTS diary_masked(id SERIAL PRIMARY KEY, content text);
             CREATE TABLE IF NOT EXISTS emotion(id SERIAL PRIMARY KEY, emotion text, score int);
-            CREATE TABLE IF NOT EXISTS recommend(id SERIAL PRIMARY KEY, music text);
+            CREATE TABLE IF NOT EXISTS recommend(id SERIAL PRIMARY KEY, music1 text, artist1 text, music2 text, artist2 text, music3 text, artist3 text);
             CREATE TABLE IF NOT EXISTS comment(id SERIAL PRIMARY KEY, content text);
             ALTER TABLE diary ADD FOREIGN KEY(id) REFERENCES date(id);
             ALTER TABLE diary_masked ADD FOREIGN KEY(id) REFERENCES date(id);
@@ -36,12 +36,12 @@ def delete_table():
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            TRUNCATE TABLE date CASCADE;
-            TRUNCATE TABLE diary CASCADE;
-            TRUNCATE TABLE diary_masked CASCADE;
-            TRUNCATE TABLE emotion CASCADE;
-            TRUNCATE TABLE recommend CASCADE;
-            TRUNCATE TABLE comment CASCADE;
+            DROP TABLE IF EXISTS date CASCADE;
+            DROP TABLE IF EXISTS diary CASCADE;
+            DROP TABLE IF EXISTS diary_masked CASCADE;
+            DROP TABLE IF EXISTS emotion CASCADE;
+            DROP TABLE IF EXISTS recommend CASCADE;
+            DROP TABLE IF EXISTS comment CASCADE;
         """)
         conn.commit()
 
