@@ -6,13 +6,11 @@ try:
     cursor = conn.cursor()
     
     cursor.execute("""
-        SELECT * FROM date;
+        SELECT d.year, d.month, d.day, e.emotion 
+        FROM (date d
+            NATURAL JOIN emotion e);
     """)
-    dates = cursor.fetchall()
-    cursor.execute("""
-                SELECT * FROM emotion;
-                   """)
-    emotions = cursor.fetchall()
+    dates_and_emotions = cursor.fetchall()
 
     # Commit the changes
     conn.commit()
@@ -24,11 +22,9 @@ except psycopg2.Error as e:
 finally:
     conn.close()
 
-# preprocessing
-limit = 30
+import pandas as pd
 import datetime
-dates_by_date = [datetime.date(date[1],date[2], date[3]) for date in dates][-limit:]
-
+# preprocessing
 def emo2idx(emo:str):
     label2id = {
     "anger": 0,
@@ -39,33 +35,45 @@ def emo2idx(emo:str):
     "sadness": 5,
     "surprise": 6
   }
-    print(emo)
+    # print(emo)
     return label2id[emo]
-    
-emotion_by_date = [emo[1] for emo in emotions][-limit:]
-emotion_by_date = list(map(emo2idx, emotion_by_date))
+
+dates_by_date = [datetime.date(date[0],date[1], date[2]) for date in dates_and_emotions]
+# emotion_by_date = list(map(emo2idx, [emo[3] for emo in dates_and_emotions]))
+emotion_by_date = [emo[3] for emo in dates_and_emotions]
+
+df = pd.DataFrame({'Date':dates_by_date, 'Emotion': emotion_by_date, 'y': [1]*len(dates_by_date)})
 
 # visualization
+import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
-colors = ListedColormap(['red','yellow','blue','pink', 'green', 'darkblue', 'purple'])
-legend_labels = list(['anger', 'disgust', 'fear', 'joy', 'neutral', 'sadness', 'surprise']) 
+palette ={"anger": "red", "disgust": "yellow", "fear": "blue", "joy": "pink", "neutral":"green", "sadness":"darkblue", "surprise":"purple"}
 
-plt.figure(figsize=(35,5))
+fig, ax = plt.subplots(figsize=(10, 3), dpi=80, facecolor='w', edgecolor='w', frameon=True)
+# fig.patch.set_alpha(0.7)  # Adjust alpha for the entire figure
 
-scatter = plt.scatter(dates_by_date, # x축
-            [1]*len(dates_by_date), # y축
-            s = 1000, # 사이즈
-            c = emotion_by_date, # 색깔(고정)
-            alpha = 0.5,
-            cmap = colors
-          ) # 투명도
+ax = sns.scatterplot(
+    x = 'Date',
+    y = 'y',
+    hue = 'Emotion',
+    data = df,
+    s = 200,
+    alpha = 0.5,
+    palette=palette
+)
 
-plt.xlabel('Date', size = 30)
-plt.ylabel('', size = 12)
-plt.yticks([])
-plt.xticks(size = 20)
-plt.title('Diary History', size = 30)
-plt.legend(handles = scatter.legend_elements()[0], labels = legend_labels, fontsize = 20)
+ax.set_yticks([])
+ax.set_ylabel('')
+ax.set_xticklabels(ax.get_xticklabels(), rotation=15, ha='right')
+ax.set(title = 'Diary History')
+ax.spines['top'].set_alpha(0.3)
+ax.spines['right'].set_alpha(0.3)
+ax.spines['bottom'].set_alpha(0.3)
+ax.spines['left'].set_alpha(0.3)
+
+legend = ax.legend()
+legend.get_frame().set_facecolor('#f0f0f0')  # Replace 'your_legend_color_here' with the desired color
+
 plt.show()
