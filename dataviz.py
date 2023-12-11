@@ -43,6 +43,8 @@ dates_by_date = [datetime.date(date[0],date[1], date[2]) for date in dates_and_e
 emotion_by_date = [emo[3] for emo in dates_and_emotions]
 
 df = pd.DataFrame({'Date':dates_by_date, 'Emotion': emotion_by_date, 'y': [1]*len(dates_by_date)})
+limit = 30
+df = df[-limit:]
 
 # visualization
 import seaborn as sns
