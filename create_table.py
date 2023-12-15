@@ -1,6 +1,42 @@
 # CREATE TABLE
 import psycopg2
 
+def alter_table():
+    
+    connection_info = "host=147.47.200.145 dbname=teamdb8 user=team8 password=youngjoon port=34543"
+    conn = psycopg2.connect(connection_info)
+    print(connection_info)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            ALTER TABLE recommend 
+            ADD music4 text, 
+            ADD artist4 text, 
+            ADD music5 text ,
+            ADD artist5 text ,
+            ADD music6 text, 
+            ADD artist6 text, 
+            ADD music7 text, 
+            ADD artist7 text, 
+            ADD music8 text, 
+            ADD artist8 text, 
+            ADD music9 text, 
+            ADD artist9 text, 
+            ADD music10 text, 
+            ADD artist10 text, 
+            ADD music11 text, 
+            ADD artist11 text, 
+            ADD music12 text, 
+            ADD artist12 text;
+                       """)
+        conn.commit()
+    except psycopg2.Error as e:
+        print("DB error: ", e)
+        conn.rollback()
+    
+    finally:
+        conn.close()
+
 def create_table():
     connection_info = "host=147.47.200.145 dbname=teamdb8 user=team8 password=youngjoon port=34543"
     conn = psycopg2.connect(connection_info)
